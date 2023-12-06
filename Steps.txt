@@ -1,1 +1,132 @@
+XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX  Jenkins START XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 
+Reference for installing java-> https://www.hostinger.in/tutorials/how-to-install-maven-on-ubuntu
+Reference for installing jenkins-> https://www.jenkins.io/doc/book/installing/linux/#debianubuntu   
+
+
+# Installing Java
+- sudo apt-get update
+- sudo apt install default-jdk
+- java -version
+
+
+#Installing Jenkins
+- sudo wget -O /usr/share/keyrings/jenkins-keyring.asc \
+  https://pkg.jenkins.io/debian-stable/jenkins.io-2023.key
+
+- echo deb [signed-by=/usr/share/keyrings/jenkins-keyring.asc] \
+  https://pkg.jenkins.io/debian-stable binary/ | sudo tee \
+  /etc/apt/sources.list.d/jenkins.list > /dev/null
+
+- sudo apt-get update
+
+- sudo apt-get install jenkins
+
+- systemctl enable jenkins
+
+- systemctl status jenkins
+
+- sudo systemctl start jenkins
+
+Now got to the web browser and open url-> "http://<publicIP>:8080"
+
+- sudo cat /var/lib/jenkins/secrets/initialAdminPassword
+  
+***
+Copy the password from here and paste it in that jenkins web 
+Now Click on "Install suggested plugins"
+
+Create First Admin User
+    - Username- aditya
+    - Password- aditya123
+    - Full name- Aditya Trivedi 
+    - E-mail address- aditya.pradeep@verticurl.com
+    Click on save
+
+
+# Giving Permission to Jenkins
+# For error while building job: permission denied while trying to connect to the Docker daemon socket at unix:///var/run/docker.sock: Post 
+- yum install docker -y  #Do this 1st and 2nd command if docker is not installed in your instance
+- sudo groupadd docker   
+- sudo usermod -aG docker jenkins
+- chown root:docker /var/run/docker.sock
+
+
+# To copy the K8s config file(kubeconfig) from the home directory of a user to the Jenkins user's home directory 
+- cp -r $HOME/.kube /var/lib/jenkins/
+- cd /var/lib/jenkins/.kube
+- chown jenkins:jenkins config
+- ls -ld config
+- systemctl restart jenkins
+
+
+#Creating a Jenkins Job
+  Click on +New Item
+  Give any name like i have given "aditya_new" and select Freestyle
+  Select "GitHub project" and write "https://github.com/adityaofficial88/Microservice1/"
+  In "Source code management" select "Git" and write "https://github.com/adityaofficial88/Microservice1/"
+  In "Branches to build" write "main" under "Branch Specifier (blank for 'any')"
+  In "Build Steps" select "Execute Shell" and write:
+          docker login -u adityaverticurl -p adityadocker
+          docker build -t microservice1 -f Dockerfile.api1 .
+          if (docker ps -a | grep 'microservice1-container')
+          then
+            docker stop microservice1-container
+            docker rm -f microservice1-container
+          fi
+          docker run -d -p 5001:5001 --name microservice1-container microservice1
+          docker tag microservice1 adityaverticurl/microservice1:latest
+          docker push adityaverticurl/microservice1:latest
+          kubectl apply -f microservice1-deployment.yaml      #this yaml file should be there in your github repo
+
+   Click on "Save"
+   Click on "Build Now"
+
+
+*********For Errors**********
+If you have any error like this in the console after clicking "Build Now":
+
+'''
+latest: digest: sha256:2ac594989a898cec0fcf8eb1e3a445ab809156c3f64cebb981ef984d603c6dee size: 1996
++ kubectl apply -f microservice1-deployment.yaml
+E1206 12:47:32.478423   11176 memcache.go:265] couldn't get current server API group list: Get "https://172.31.90.23:6443/api?timeout=32s": context deadline exceeded
+error: unable to recognize "microservice1-deployment.yaml": Get "https://172.31.90.23:6443/api?timeout=32s": context deadline exceeded
+Build step 'Execute shell' marked build as failure
+Finished: FAILURE
+'''
+
+Then do this,
+- cd /var/lib/jenkins/workspace/aditya_new       #here aditya_new is the jenkins job name  
+- kubeadm reset
+- kubeadm init
+- rm -rf $HOME/.kube
+
+# To start using your cluster you need to execute these 3 commands
+- mkdir -p $HOME/.kube
+- sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+- sudo chown $(id -u):$(id -g) $HOME/.kube/config
+
+# Adding weave as a network plugin that helps to connect all pods together
+- kubectl apply -f https://github.com/weaveworks/weave/releases/download/v2.8.1/weave-daemonset-k8s.yaml
+
+
+- kubectl get node                      # now you can see that control plane is ready
+- kubectl describe node <name of node>
+
+
+# Config master node in a way so that pods can be deployed within itself not in worker node. 
+- kubectl taint node <name of node> node-role.kubernetes.io/control-plane:NoSchedule-
+
+# Delete the deployment
+- kubectl delete -f microservice1-deployment.yaml
+
+
+- cp -r $HOME/.kube /var/lib/jenkins/
+- cd /var/lib/jenkins/.kube
+- chown jenkins:jenkins config
+- ls -ld config
+- systemctl restart jenkins
+ 
+Now go to jenkins and again try to Build that job by clicking "Build Now".
+*******************
+XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX  Jenkins END XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
