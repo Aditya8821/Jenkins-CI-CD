@@ -1,0 +1,33 @@
+# Docker login
+docker login -u adityaverticurl -p adityadocker
+
+# Run the tests
+docker build -t microservice1-test -f Dockerfile.test .
+docker run --rm microservice1-test
+
+TEST_EXIT_CODE=$?
+
+if [ $TEST_EXIT_CODE -eq 0 ]; then
+  echo "Tests passed successfully!"
+else
+  echo "Tests failed!"
+fi
+
+# Check if the container is running and stop it
+if (docker ps -a | grep 'microservice1-container') then
+  docker stop microservice1-container
+  docker rm -f microservice1-container
+fi
+
+# Build the Docker image for the application
+docker build -t microservice1 -f Dockerfile.api1 .
+
+# Run the Docker container
+docker run -d -p 5001:5001 --name microservice1-container microservice1
+
+# Tag and push the Docker image
+docker tag microservice1 adityaverticurl/microservice1:latest
+docker push adityaverticurl/microservice1:latest
+
+# Apply Kubernetes deployment
+kubectl apply -f microservice1-deployment.yaml
