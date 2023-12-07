@@ -1,0 +1,4 @@
+sonar-scanner -Dsonar.projectKey='aditya' -Dsonar.sources=. -Dsonar.host.url=http://54.83.184.244:9000 -Dsonar.login='sqp_546170462b0d8bb812ee0f6ae172f0c5aae7692b' -X
+
+
+#Here 'sqp_546170462b0d8bb812ee0f6ae172f0c5aae7692b' is the token which we have generated after going to sonarqube web.
