@@ -167,4 +167,26 @@ kubectl apply -f microservice1-deployment.yaml
 """
 
 xxxxxx "Running dummy unit test" END xxxxxx
+
+xxxxxx SonarQube Startxxxxxx
+
+- Go to build steps and apart from "Execute Shell" add one more Build Step(using that add build step button below) and choose
+"Execute SonarQube Scanner" there and then paste the thing given below in the "Task to run"
+
+sonar-scanner -Dsonar.projectKey='aditya' -Dsonar.sources=. -Dsonar.host.url=http://54.83.184.244:9000 -Dsonar.login='sqp_546170462b0d8bb812ee0f6ae172f0c5aae7692b' -X
+
+- Click Save 
+
+- Then go Managejenkins>Tools>SonarQube Scanner installations>
+    Give name as "Sonar"
+    Click on Install Automatically 
+    Choose "SonarQube Scanner 2.0" as a version 
+    Choose "Install as Maven Central" as installer
+
+- Click Save
+- Now go and click the "Build Now" in your job again.
+
+//Actually it is not uploading result to Sonar Server
+xxxxxxSonarQube Endxxxxxx
+
 XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX  Jenkins END XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
